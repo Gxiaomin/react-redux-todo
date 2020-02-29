@@ -1,11 +1,15 @@
 /*
  * @Author: xiaomin
  * @Date: 2020-02-28 19:22:51
- * @LastEditTime: 2020-02-28 21:36:19
+ * @LastEditTime: 2020-02-29 21:05:19
  */
 import React, { Component } from 'react';
 import '../assets/stylesheet/todo.scss';
 import TodoItem from './TodoItem';
+// 将额外的props传递给组件，并返回新的组件，组件在该过程中不会受到影响
+import { connect } from 'react-redux';
+// 引入actions
+import { setTodosArr } from '../store/actions';
 
 var id = 0;
 class Todo extends Component {
@@ -14,7 +18,7 @@ class Todo extends Component {
     super(props);
     
     this.state = {
-      todos: [],
+      // todos: [],
       inputVal: ''
     }
   }
@@ -28,6 +32,7 @@ class Todo extends Component {
 
   // 添加todo
   addTodo () {
+    let { setTodosArr, allTodos } = this.props;
     if (this.state.inputVal === '') return;
 
     let newTodo = [{
@@ -37,35 +42,37 @@ class Todo extends Component {
     }]
     
     this.setState({
-      todos: newTodo.concat(this.state.todos),
       inputVal: ''
     })
+    // console.log(newTodo.concat(allTodos))
+    setTodosArr(newTodo.concat(allTodos))
   }
 
   // 改变todo状态
   onCompletedItem (id) {
-    let copyTodos = this.state.todos;
+    let copyTodos = this.props.allTodos;
+    
     copyTodos.forEach((item, index) => {
       if (item.id === id) {
         item.completed = !item.completed;
       }
     })
+    // console.log(copyTodos)
 
-    this.setState({
-      todos: copyTodos
-    })
+    this.props.setTodosArr(copyTodos)
   }
 
   // 删除todo 
   onDeleteItem (id) {
-    this.state.todos.splice(this.state.todos.findIndex(todo => todo.id === id), 1);
+    let allTodos = this.props.allTodos;
+    allTodos.splice(allTodos.findIndex(todo => todo.id === id), 1);
 
-    this.setState({
-      todos: this.state.todos
-    })
+    this.props.setTodosArr(allTodos)
   }
 
   render() {
+    let { allTodos } = this.props;
+    
     return (
       <section className="todo-wrapper">
         <div className="input-wrapper">
@@ -80,7 +87,7 @@ class Todo extends Component {
         </div>
         <div className="todo-body">
           <TodoItem 
-            todos={ this.state.todos } 
+            todos={ allTodos } 
             completedItem={ this.onCompletedItem.bind(this) }
             deleteItem={ this.onDeleteItem.bind(this) }
           ></TodoItem>
@@ -90,4 +97,25 @@ class Todo extends Component {
   }
 }
 
-export default Todo;
+// mapStateToProps：将state映射到组件的props中
+const mapStateToProps = (state) => {
+  // console.log(state)
+  return {
+    allTodos: state.allTodos
+  }
+}
+ 
+// mapDispatchToProps：将dispatch映射到组件的props中
+const mapDispatchToProps = dispatch => {
+  return {
+    setTodosArr (data) {
+      dispatch(setTodosArr(data))
+      // 上行代码相当于
+        /*dispatch((dispatch, getState) => {
+            dispatch({ type: 'SET_TODOS_ARR', data: data })
+        )*/
+    }
+  }
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(Todo);
